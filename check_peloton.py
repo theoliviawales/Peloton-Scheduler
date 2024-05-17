@@ -16,6 +16,8 @@ from time import sleep
 EMAIL_DOMAIN = 'txt.att.net'
 HOST = 'smtp.gmail.com'
 PELOTON_URL = 'https://schedule.studio.onepeloton.com/p/7248695-peloton-studios-new-york/c/schedule?startdate=2024-05-30&enddate=2024-07-03&date=2024-06-06&venues=&category=&instructors=&offering_types='    
+CHECK_DELAY_SEC = 60
+TEXT_DELAY_SEC = 10
 
 async def send_txt(number: str, email: str, password: str, subject: str, msg: str):
     # build message
@@ -62,6 +64,7 @@ def parse_html(html_text):
     soup = BeautifulSoup(html_text, 'lxml')
     day_events = []
 
+    # Skip the first element, its the name of the program
     for day in argv[1:]:
         # Find the span with the day label
         label = soup.find("span", text=day)
@@ -79,14 +82,26 @@ def parse_html(html_text):
         print('Day {} -- contains events: {}'.format(day, contains_events))
     return day_events
 
-html = get_source_selenium()
-day_events = parse_html(html)
+# Infinite loop babyyyyy
+while(True):
+    print('CHECKING!!!')
+    
+    html = get_source_selenium()
+    day_events = parse_html(html)
 
-if len(day_events) > 0:
-    day_string = ', '.join(day_events)
-    message = 'CLASS ON JUNE {}'.format(day_string)
+    if len(day_events) > 0:
+        day_string = ', '.join(day_events)
+        message = 'CLASS ON JUNE {}'.format(day_string)
 
-    txt_event = send_txt(os.environ['PHONE_NUMBER'], os.environ['EMAIL_ADDRESS'], os.environ['EMAIL_PASSWORD'], message, message)
-    asyncio.run(txt_event)
-else:
-    print('NO EVENTS')
+        txt_event = send_txt(os.environ['PHONE_NUMBER'], os.environ['EMAIL_ADDRESS'], os.environ['EMAIL_PASSWORD'], message, message)
+        asyncio.run(txt_event)
+
+        # Wait for a lil for the async text sending to complete
+        sleep(TEXT_DELAY_SEC)
+        exit(0)
+
+    else:
+        print('NO EVENTS')
+
+        # Wait 1 minute before checking again
+        sleep(CHECK_DELAY_SEC)
