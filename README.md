@@ -6,6 +6,7 @@ e.g,
 export PHONE_NUMBER="<phone_number>"
 export EMAIL_ADDRESS="<email_address>"
 export EMAIL_PASSWORD="<password>"
+export CHROME_DRIVER_PATH="<path>"
 
 Run the python script and provide args for the individual days you wanna check
 ```

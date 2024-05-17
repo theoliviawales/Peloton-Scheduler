@@ -36,7 +36,7 @@ async def send_txt(number: str, email: str, password: str, subject: str, msg: st
 
 def get_source_selenium():
     options = Options()
-    service = Service('/opt/homebrew/bin/chromedriver')
+    service = Service(os.environ['CHROME_DRIVER_PATH'])
     options.add_argument("--headless")
 
     driver = webdriver.Chrome(service=service, options=options)
