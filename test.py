@@ -6,6 +6,7 @@ import aiosmtplib
 import asyncio
 import re
 import requests
+import os
 
 from bs4 import BeautifulSoup
 from email.message import EmailMessage
@@ -16,12 +17,12 @@ EMAIL_DOMAIN = 'txt.att.net'
 HOST = 'smtp.gmail.com'
 PELOTON_URL = 'https://schedule.studio.onepeloton.com/p/7248695-peloton-studios-new-york/c/schedule?startdate=2024-05-30&enddate=2024-07-03&date=2024-06-06&venues=&category=&instructors=&offering_types='    
 
-async def send_txt(number: str, email: str, password: str):
+async def send_txt(number: str, email: str, password: str, subject: str, msg: str):
     # build message
     message = EmailMessage()
     message["From"] = email
     message["To"] = f"{number}@{EMAIL_DOMAIN}"
-    message["Subject"] = subj
+    message["Subject"] = subject
     message.set_content(msg)
 
     # send
@@ -59,6 +60,7 @@ def get_source_raw():
 
 def parse_html(html_text):    
     soup = BeautifulSoup(html_text, 'lxml')
+    day_events = []
 
     for day in argv[1:]:
         # Find the span with the day label
@@ -71,7 +73,20 @@ def parse_html(html_text):
         events = parent.next_sibling
 
         contains_events = 'No Events' not in events.getText()
+        if contains_events:
+            day_events.append(day)
+
         print('Day {} -- contains events: {}'.format(day, contains_events))
+    return day_events
 
 html = get_source_selenium()
-parse_html(html)
+day_events = parse_html(html)
+
+if len(day_events) > 0:
+    day_string = ', '.join(day_events)
+    message = 'CLASS ON JUNE {}'.format(day_string)
+
+    txt_event = send_txt(os.environ['PHONE_NUMBER'], os.environ['EMAIL_ADDRESS'], os.environ['EMAIL_PASSWORD'], message, message)
+    asyncio.run(txt_event)
+else:
+    print('NO EVENTS')
